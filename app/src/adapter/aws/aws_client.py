@@ -1,7 +1,5 @@
-
-from src.adapter.aws.aws_sqs            import AWSSQS
-from src.adapter.aws.aws_s3             import S3
 from src.adapter.aws.aws_stepfunctions  import AWSStepFunctions
+from src.adapter.aws.aws_logs           import Logs
 
 
 class AWS:
@@ -9,3 +7,4 @@ class AWS:
 
     def __init__(self):
         self.stepfunctions_client   = AWSStepFunctions()
+        self.logs_client            = Logs()

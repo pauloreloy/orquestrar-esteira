@@ -1,4 +1,5 @@
 import json
+from src.domain.enum.loglevel                       import LogLevel
 from src.adapter.aws.aws_client                     import AWS
 from src.domain.usecase.inicia_maquina_usecase      import IniciaMaquinaUseCase
 from src.domain.usecase.atualiza_maquina_usecase    import AtualizaMaquinaUseCase
@@ -20,5 +21,9 @@ def process_event_record(record: dict):
 
 
 def lambda_handler(event, context):
+    aws_client.logs_client.custom_log(
+        log_level=LogLevel.INFO,
+        message="Lambda function started processing event"
+    )
     for record in event.get('Records', []):
         process_event_record(record)
