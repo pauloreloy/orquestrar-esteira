@@ -10,6 +10,6 @@ class IniciaMaquinaUseCase:
 
 
     def execute(self, message: dict):
-        _step       = message.get('step')
-        _payload    = message.get('payload')
-        return self.aws_client.stepfunctions_client.start_execution(_step, _payload)
+        _state_machine_name = message.get('state_machine_name')
+        _payload            = message.get('payload')
+        return self.aws_client.stepfunctions_client.start_execution(_state_machine_name, _payload)

@@ -2,7 +2,7 @@ from typing                     import Any, Optional
 from src.adapter.aws.aws_client import AWS
 
 
-class StepBase:
+class StepFunctionBase:
 
 
     def __init__(self, state_machine_name: str):
@@ -20,11 +20,11 @@ class StepBase:
         self.aws_client.stepfunctions_client.start_execution(self.state_machine_name, payload)
     
 
-    def send_task_failure(self, step_token: str, step_error: str, step_cause: str, context: Any = None):
+    def send_task_failure(self, task_token: str, task_error: str, task_error_cause: str, context: Any = None):
         self.init_context(context)
-        self.aws_client.stepfunctions_client.send_task_failure(step_token, step_error, step_cause)
+        self.aws_client.stepfunctions_client.send_task_failure(task_token, task_error, task_error_cause)
 
 
-    def send_task_success(self, step_token: str, payload: dict, context: Any = None):
+    def send_task_success(self, task_token: str, payload: dict, context: Any = None):
         self.init_context(context)
-        self.aws_client.stepfunctions_client.send_task_success(step_token, payload)
+        self.aws_client.stepfunctions_client.send_task_success(task_token, payload)

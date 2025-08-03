@@ -29,17 +29,17 @@ class AWSStepFunctions:
         return response
 
 
-    def send_task_success(self, step_token: str, payload: dict):
+    def send_task_success(self, task_token: str, payload: dict):
         return self.client.send_task_success(
-            taskToken=step_token,
+            taskToken=task_token,
             output=json.dumps(payload)
         )
 
 
-    def send_task_failure(self, step_token: str, step_error: str, step_cause: str):
+    def send_task_failure(self, task_token: str, task_error: str, task_error_cause: str):
         return self.client.send_task_failure(
-            taskToken=step_token,
-            error=str(step_error),
-            cause=str(step_cause)
+            taskToken=task_token,
+            error=str(task_error),
+            cause=str(task_error_cause)
         )
 

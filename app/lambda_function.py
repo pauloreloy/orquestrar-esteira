@@ -10,9 +10,9 @@ aws_client = AWS()
 
 def process_sqs_record(record: dict):
     message = json.loads(record.get('body'))
-    if message.get('step_token'):
+    if message.get('task_token'):
         AtualizaMaquinaUseCase(aws_client).execute(message)
-    if message.get('step') and not message.get('step_token'):
+    if message.get('state_machine_name') and not message.get('task_token'):
         IniciaMaquinaUseCase(aws_client).execute(message)
 
 
