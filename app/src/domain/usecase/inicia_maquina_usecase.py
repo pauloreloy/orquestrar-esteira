@@ -1,5 +1,4 @@
 
-from src.domain.strategies.context  import Context
 from src.adapter.aws.aws_client     import AWS
 
 
