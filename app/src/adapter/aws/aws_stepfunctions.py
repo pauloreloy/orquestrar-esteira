@@ -3,7 +3,7 @@ import json
 from src.adapter.aws.aws_config import AWSConfig
 
 
-class AWSStepFunctions:
+class StepFunctions:
 
     
     def __init__(self):
@@ -22,11 +22,14 @@ class AWSStepFunctions:
         state_machine_arn = self.get_state_machine_arn(state_machine_name)
         if not state_machine_arn:
             raise ValueError(f"State machine '{state_machine_name}' not found.")
-        response = self.client.start_execution(
-            stateMachineArn=state_machine_arn,
-            input=json.dumps(payload)
-        )
-        return response
+        try:
+            response = self.client.start_execution(
+                stateMachineArn=state_machine_arn,
+                input=json.dumps(payload)
+            )
+            return response
+        except Exception as e:
+            raise RuntimeError(e)
 
 
     def send_task_success(self, task_token: str, payload: dict):

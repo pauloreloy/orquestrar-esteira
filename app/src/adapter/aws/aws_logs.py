@@ -1,9 +1,12 @@
 import time
 import json
 import logging
-from src.config                 import params
-from src.adapter.aws.aws_config import AWSConfig
-from src.domain.enum.loglevel   import LogLevel
+from typing                             import Dict, Any
+from src.config                         import params
+from src.adapter.aws.aws_config         import AWSConfig
+from src.domain.enums.log_level         import LogLevel
+from src.domain.enums.logger_message    import LoggerMessageEnum
+from src.common.correlation             import get_correlation_id
 
 
 class Logs:
@@ -19,6 +22,7 @@ class Logs:
             formatter   = logging.Formatter('%(asctime)s %(levelname)s %(name)s - %(message)s')
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
+            self.logger.propagate = False
         self.verify_log_group()
         self.verify_log_stream()
 
@@ -32,8 +36,7 @@ class Logs:
                 return True
             return True
         except Exception as e:
-            print(f"Error verifying or creating log group: {e}")
-            return False
+            raise RuntimeError(f"Error verifying or creating log group: {e}")
 
 
     def verify_log_stream(self):
@@ -51,31 +54,39 @@ class Logs:
                 return True
             return True
         except Exception as e:
-            print(f"Error verifying or creating log stream: {e}")
-            return False
-        
+            raise RuntimeError(f"Error verifying or creating log stream: {e}")
 
-    def custom_log(self, log_level: LogLevel, message: str):
-        self.logger.setLevel(log_level.value)
+
+    def log(self, log_level: LogLevel, log_code: LoggerMessageEnum = None, object: Dict[dict, str] = None) -> None:
+        if log_level: self.logger.setLevel(log_level.value)
         try:
             log_entry = {
-                "level": str(log_level),
-                "lambda": params.LAMBDA_NAME,
-                "message": message
+                "level": str(log_level.value),
+                "log_code": log_code.codigo if log_code else None,
+                "log_message": log_code.descricao if log_code else None,  
             }
+            if get_correlation_id() is not None: log_entry["correlation_id"] = get_correlation_id()
+            if object is not None: log_entry["object"] = object
             self.logger.log(
                 getattr(logging, str(log_level), logging.INFO),
-                json.dumps(message, ensure_ascii=False, indent=4) if isinstance(message, dict) else message
+                json.dumps(log_entry, ensure_ascii=False)
             )
+            self.custom_log(log_entry)
+        except Exception as e:
+            raise RuntimeError(f"Error logging message: {e}")
+
+
+    def custom_log(self, message: Dict[dict, Any]) -> Any:
+        try:
             self.client.put_log_events(
                 logGroupName=self.log_group_name,
                 logStreamName=self.log_stream_name,
                 logEvents=[
                     {
                         'timestamp': int(time.time() * 1000),
-                        'message': json.dumps(log_entry)
+                        'message': json.dumps(message)
                     }
                 ]
             )
         except Exception as e:
-            print(f"Error logging message: {e}")
+            raise RuntimeError(f"Error logging message: {e}")

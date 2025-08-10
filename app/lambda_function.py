@@ -1,19 +1,41 @@
 import json
-from src.domain.enum.loglevel                       import LogLevel
+from src.domain.enums.log_level                     import LogLevel
+from src.domain.enums.logger_message                import LoggerMessageEnum
 from src.adapter.aws.aws_client                     import AWS
-from src.domain.usecase.inicia_maquina_usecase      import IniciaMaquinaUseCase
-from src.domain.usecase.atualiza_maquina_usecase    import AtualizaMaquinaUseCase
+from src.adapter.quickconfig.quickconfig_adapter    import QuickConfigAdapter
+from src.domain.usecases.inicia_maquina_usecase     import IniciaMaquinaUseCase
+from src.domain.usecases.atualiza_maquina_usecase   import AtualizaMaquinaUseCase
+from src.domain.exceptions.usecase_exceptions       import AtualizaMaquinaException
+from src.domain.exceptions.usecase_exceptions       import IniciaMaquinaException
+from src.common.correlation                         import set_correlation_id
 
 
-aws_client = AWS()
+aws_client          = AWS()
+quickconfig_adapter = QuickConfigAdapter(aws_client)
 
 
 def process_sqs_record(record: dict):
-    message = json.loads(record.get('body'))
-    if message.get('task_token'):
-        AtualizaMaquinaUseCase(aws_client).execute(message)
-    if message.get('state_machine_name') and not message.get('task_token'):
-        IniciaMaquinaUseCase(aws_client).execute(message)
+    """Processa mensagem recebida via SQS"""
+    try:
+        message = json.loads(record.get("body", "{}"))
+    except (json.JSONDecodeError, TypeError) as e:
+        raise RuntimeError(e)
+
+    if message.get("task_token"):
+        try:
+            AtualizaMaquinaUseCase(aws_client, quickconfig_adapter).execute(message)
+        except Exception as e:
+            raise AtualizaMaquinaException(e)
+
+    payloads = message.get("payloads")
+    if isinstance(payloads, (list, tuple)) and any(payloads):
+        for payload in payloads:
+            if payload:
+                try:
+                    IniciaMaquinaUseCase(aws_client, quickconfig_adapter).execute(payload)
+                except Exception as e:
+                    raise IniciaMaquinaException(e)
+    return None
 
 
 def process_event_record(record: dict):
@@ -21,9 +43,10 @@ def process_event_record(record: dict):
 
 
 def lambda_handler(event, context):
-    aws_client.logs_client.custom_log(
+    set_correlation_id(None)
+    aws_client.logs_client.log(
         log_level=LogLevel.INFO,
-        message="Lambda function started processing event"
+        log_code=LoggerMessageEnum.L_1000
     )
     for record in event.get('Records', []):
         process_event_record(record)
