@@ -57,7 +57,7 @@ class Logs:
             raise RuntimeError(f"Error verifying or creating log stream: {e}")
 
 
-    def log(self, log_level: LogLevel, log_code: LoggerMessageEnum = None, object: Dict[dict, str] = None) -> None:
+    def log(self, log_level: LogLevel, log_code: LoggerMessageEnum = None, message: Dict[dict, str] = None) -> None:
         if log_level: self.logger.setLevel(log_level.value)
         try:
             log_entry = {
@@ -66,7 +66,7 @@ class Logs:
                 "log_message": log_code.descricao if log_code else None,  
             }
             if get_correlation_id() is not None: log_entry["correlation_id"] = get_correlation_id()
-            if object is not None: log_entry["object"] = object
+            if message is not None: log_entry["message"] = message
             self.logger.log(
                 getattr(logging, str(log_level), logging.INFO),
                 json.dumps(log_entry, ensure_ascii=False)

@@ -8,6 +8,7 @@ from src.domain.usecases.atualiza_maquina_usecase   import AtualizaMaquinaUseCas
 from src.domain.exceptions.usecase_exceptions       import AtualizaMaquinaException
 from src.domain.exceptions.usecase_exceptions       import IniciaMaquinaException
 from src.common.correlation                         import set_correlation_id
+from src.domain.decorators.exception                import exception_decorator
 
 
 aws_client          = AWS()
@@ -23,16 +24,23 @@ def process_sqs_record(record: dict):
 
     if message.get("task_token"):
         try:
-            AtualizaMaquinaUseCase(aws_client, quickconfig_adapter).execute(message)
+            @exception_decorator(aws_client)
+            def atualiza_maquina(message):
+                AtualizaMaquinaUseCase(aws_client, quickconfig_adapter).execute(message)
+            atualiza_maquina(message)
         except Exception as e:
             raise AtualizaMaquinaException(e)
 
+    if message.get("correlation_id"): set_correlation_id(message.get("correlation_id"))
     payloads = message.get("payloads")
     if isinstance(payloads, (list, tuple)) and any(payloads):
         for payload in payloads:
             if payload:
                 try:
-                    IniciaMaquinaUseCase(aws_client, quickconfig_adapter).execute(payload)
+                    @exception_decorator(aws_client)
+                    def inicia_maquina(payload):
+                        IniciaMaquinaUseCase(aws_client, quickconfig_adapter).execute(payload)
+                    inicia_maquina(payload)
                 except Exception as e:
                     raise IniciaMaquinaException(e)
     return None

@@ -4,6 +4,8 @@ from typing                                                 import Any, Optional
 from src.adapter.aws.aws_client                             import AWS
 from src.adapter.quickconfig.quickconfig_adapter            import QuickConfigAdapter
 from src.domain.strategies.stepfunction.stepfunction_base   import StepFunctionsBase
+from src.domain.enums.log_level                             import LogLevel
+from src.domain.enums.logger_message                        import LoggerMessageEnum
 
 
 class StepFunction(StepFunctionsBase):
@@ -36,4 +38,13 @@ class StepFunction(StepFunctionsBase):
         _payload    = payload.get("payload")
         self.init_context(context)
         self.state_machine_name = self.get_state_machine_name(self.schema)
-        return self.aws_client.stepfunctions_client.start_execution(self.state_machine_name, _payload)
+        response = self.aws_client.stepfunctions_client.start_execution(self.state_machine_name, _payload)
+        self.aws_client.logs_client.log(
+            log_level=LogLevel.INFO,
+            log_code=LoggerMessageEnum.L_1001,
+            message={
+                "state_machine_name": self.state_machine_name,
+                "payload": _payload
+            },
+        )
+        return response

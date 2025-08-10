@@ -108,7 +108,7 @@ class TestAWSLogs(unittest.TestCase):
         logs.log(
             log_level=LogLevel.INFO,
             log_code=LoggerMessageEnum.L_1000,
-            object={"key": "value"}
+            message={"key": "value"}
         )
     
 
@@ -121,7 +121,7 @@ class TestAWSLogs(unittest.TestCase):
                 logs.log(
                     log_level=LogLevel.INFO,
                     log_code=LoggerMessageEnum.L_1000,
-                    object={"key": "value"}
+                    message={"key": "value"}
                 )
     
 
