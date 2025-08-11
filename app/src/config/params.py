@@ -9,5 +9,5 @@ LAMBDA_NAME             = "lbd-orquestrar-esteira-retencao"
 TOGGLE_SCHEMAS          = "toggle-schemas-maquinas-de-estado"
 TOGGLE_DEFAULT          = {
     "ValidaRetido":         "validacao-2",
-    "RegistroEvidencia":    "registro-evidencia"
+    "RegistroEvidencia":    "registrar-evidencia"
 }
