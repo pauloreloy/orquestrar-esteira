@@ -21,16 +21,6 @@ def process_sqs_record(record: dict):
         message = json.loads(record.get("body", "{}"))
     except (json.JSONDecodeError, TypeError) as e:
         raise RuntimeError(e)
-
-    if message.get("task_token"):
-        try:
-            @exception_decorator(aws_client)
-            def atualiza_maquina(message):
-                AtualizaMaquinaUseCase(aws_client, quickconfig_adapter).execute(message)
-            atualiza_maquina(message)
-        except Exception as e:
-            raise AtualizaMaquinaException(e)
-
     if message.get("correlation_id"): set_correlation_id(message.get("correlation_id"))
     payloads = message.get("payloads")
     if isinstance(payloads, (list, tuple)) and any(payloads):
@@ -50,11 +40,26 @@ def process_event_record(record: dict):
     if record.get('eventSource') == 'aws:sqs': process_sqs_record(record)
 
 
+def process_task_token(event: dict):
+    if event.get("correlation_id"): set_correlation_id(event.get("correlation_id"))
+    if event.get("task_token"):
+        try:
+            @exception_decorator(aws_client)
+            def atualiza_maquina(message):
+                return AtualizaMaquinaUseCase(aws_client, quickconfig_adapter).execute(message)
+            atualiza_maquina(event)
+        except Exception as e:
+            raise AtualizaMaquinaException(e)
+
+
 def lambda_handler(event, context):
+    print(event)
     set_correlation_id(None)
     aws_client.logs_client.log(
         log_level=LogLevel.INFO,
         log_code=LoggerMessageEnum.L_1000
     )
+    if event.get("task_token"):
+        return process_task_token(event)
     for record in event.get('Records', []):
         process_event_record(record)

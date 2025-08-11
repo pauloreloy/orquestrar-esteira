@@ -13,7 +13,7 @@ class AtualizaMaquinaUseCase:
 
     def execute(self, message: dict):
         _payload        = {
-            "Payload": message.get('payload')
+            "Payload": message
         }
         _task_token     = str(message.get('task_token'))
         if message.get('task_error'):
